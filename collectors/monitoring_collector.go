@@ -166,6 +166,16 @@ func (c *MonitoringCollector) reportMonitoringMetrics(ch chan<- prometheus.Metri
 				log.Debugf("Retrieving Google Stackdriver Monitoring metrics for descriptor `%s`...", metricDescriptor.Type)
 				timeSeriesListCall := c.monitoringService.Projects.TimeSeries.List(utils.ProjectResource(c.projectID)).
 					Filter(fmt.Sprintf("metric.type=\"%s\"", metricDescriptor.Type)).
+					AggregationCrossSeriesReducer("REDUCE_SUM").
+					AggregationGroupByFields(
+						"metric.labels.response_code_class",
+						"metric.labels.protocol",
+						"metric.labels.response_code",
+						"metric.labels.cache_result",
+						"metric.labels.proxy_continent",
+						"resource.labels.*").
+					AggregationPerSeriesAligner("ALIGN_DELTA").
+					AggregationAlignmentPeriod("60s").
 					IntervalStartTime(startTime.Format(time.RFC3339Nano)).
 					IntervalEndTime(endTime.Format(time.RFC3339Nano))
 
